@@ -1,81 +1,76 @@
-const fs = require("fs");
-const filePath = "./storage.json";
-
-const addMovie = (movieArr, movieObj) => {
-  //console.log(movieObj);
+const addMovie = async (collection, movieObj) => {
   try {
-    movieArr.push(movieObj);
-    const stringObj = JSON.stringify(movieArr);
-    fs.writeFileSync(filePath, stringObj);
+    await collection.insertOne(movieObj);
+    displayInfo(
+      `${movieObj.title} was successfully inserted into the database.`
+    );
   } catch (error) {
     displayInfo(error.message);
   }
 };
 
-const listMovies = () => {
+const listMovies = async (collection) => {
   try {
-    displayInfo(JSON.parse(fs.readFileSync(filePath)));
-  } catch (error) {
-    displayInfo("There are no movies to list.");
-  }
-};
-
-const listSingleMovie = (title) => {
-  try {
-    const movieArr = JSON.parse(fs.readFileSync(filePath));
-    const movieObj = movieArr.find((movieArr) => movieArr.title === title);
-
-    if (movieObj) {
-      displayInfo(movieObj);
+    const movieArr = await collection.find({}).toArray();
+    if (movieArr.length >= 1) {
+      displayInfo(movieArr);
     } else {
-      displayInfo("Movie was not found in database.");
+      displayInfo("No movies were found in the database.");
     }
   } catch (error) {
     displayInfo(error.message);
   }
 };
 
-const updateMovie = (cliArguments) => {
+const listSingleMovie = async (collection, title) => {
   try {
-    const movieArr = JSON.parse(fs.readFileSync(filePath));
-    const movieObj = movieArr.find((obj) => obj.title === cliArguments.search);
+    const query = { title: title };
+    const movieArr = await collection.find(query).toArray();
 
-    cliArguments.title && (movieObj.title = cliArguments.title);
-    cliArguments.actor && (movieObj.actor = cliArguments.actor);
-
-    const stringObj = JSON.stringify(movieArr);
-    fs.writeFileSync(filePath, stringObj);
-  } catch (error) {
-    // ENOENT
-    if (error.code === "ENOENT") {
-      displayInfo("Movie database was not found.");
-    } else {
-      displayInfo(
-        "Movie was not found in the database. No update has been made."
-      );
-    }
-  }
-};
-
-const deleteMovie = (title) => {
-  try {
-    const movieArr = JSON.parse(fs.readFileSync(filePath));
-    const index = movieArr.findIndex((obj) => obj.title === title);
-
-    if (index !== -1) {
-      movieArr.splice(index, 1);
-      const stringObj = JSON.stringify(movieArr);
-      fs.writeFileSync(filePath, stringObj);
+    if (movieArr.length >= 1) {
+      displayInfo(movieArr);
     } else {
       displayInfo("Movie was not found in the database.");
     }
   } catch (error) {
-    // ENOENT
-    if (error.code === "ENOENT") {
-      displayInfo("Movie database was not found.");
+    displayInfo(error.message);
+  }
+};
+
+const updateMovie = async (collection, cliArguments) => {
+  try {
+    const filter = { title: cliArguments.search };
+    let update = {};
+
+    cliArguments.title && (update["title"] = cliArguments.title);
+    cliArguments.actor && (update["actor"] = cliArguments.actor);
+
+    const result = await collection.updateOne(filter, { $set: update });
+    if (result.matchedCount >= 1) {
+      displayInfo(
+        `${cliArguments.search} was successfully updated to ${cliArguments.title} - ${cliArguments.actor}`
+      );
     } else {
-      displayInfo(error.message);
+      displayInfo(
+        `${cliArguments.search} was not found and therefore not updated.`
+      );
     }
+  } catch (error) {
+    displayInfo(error.message);
+  }
+};
+
+const deleteMovie = async (collection, title) => {
+  try {
+    const query = { title: title };
+    const result = await collection.deleteOne(query);
+    if (result.deletedCount === 0) {
+      displayInfo(`${title} was not found in the database.`);
+    } else {
+      displayInfo(`${title} was successfully deleted. `);
+    }
+  } catch (error) {
+    displayInfo(error.message);
   }
 };
 
