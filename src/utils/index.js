@@ -1,17 +1,25 @@
-const addMovie = async (collection, movieObj) => {
+const Movie = require("../models/models.js");
+const mongoose = require("mongoose");
+
+const addMovie = async (movieObj) => {
   try {
-    await collection.insertOne(movieObj);
-    displayInfo(
-      `${movieObj.title} was successfully inserted into the database.`
-    );
+    const newMovie = new Movie(movieObj);
+    await newMovie
+      .save()
+      .then(
+        displayInfo(
+          `${newMovie.title} was successfully inserted into the database.`
+        )
+      );
   } catch (error) {
     displayInfo(error.message);
   }
 };
 
-const listMovies = async (collection) => {
+const listMovies = async () => {
   try {
-    const movieArr = await collection.find({}).toArray();
+    const movieArr = await Movie.find({});
+
     if (movieArr.length >= 1) {
       displayInfo(movieArr);
     } else {
@@ -22,22 +30,22 @@ const listMovies = async (collection) => {
   }
 };
 
-const listSingleMovie = async (collection, title) => {
+const listSingleMovie = async (title) => {
   try {
     const query = { title: title };
-    const movieArr = await collection.find(query).toArray();
+    const movieArr = await Movie.find(query);
 
     if (movieArr.length >= 1) {
       displayInfo(movieArr);
     } else {
-      displayInfo("Movie was not found in the database.");
+      displayInfo(`${title} was not found in the database.`);
     }
   } catch (error) {
     displayInfo(error.message);
   }
 };
 
-const updateMovie = async (collection, cliArguments) => {
+const updateMovie = async (cliArguments) => {
   try {
     const filter = { title: cliArguments.search };
     let update = {};
@@ -45,7 +53,10 @@ const updateMovie = async (collection, cliArguments) => {
     cliArguments.title && (update["title"] = cliArguments.title);
     cliArguments.actor && (update["actor"] = cliArguments.actor);
 
-    const result = await collection.updateOne(filter, { $set: update });
+    let options = { new: false };
+
+    result = await Movie.updateOne(filter, update, options);
+
     if (result.matchedCount >= 1) {
       displayInfo(
         `${cliArguments.search} was successfully updated to ${cliArguments.title} - ${cliArguments.actor}`
@@ -60,10 +71,10 @@ const updateMovie = async (collection, cliArguments) => {
   }
 };
 
-const deleteMovie = async (collection, title) => {
+const deleteMovie = async (title) => {
   try {
-    const query = { title: title };
-    const result = await collection.deleteOne(query);
+    result = await Movie.deleteOne({ title: title });
+
     if (result.deletedCount === 0) {
       displayInfo(`${title} was not found in the database.`);
     } else {

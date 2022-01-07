@@ -1,4 +1,5 @@
 const yargs = require("yargs");
+
 const {
   addMovie,
   listMovies,
@@ -7,28 +8,25 @@ const {
   listSingleMovie,
 } = require("./utils/index.js");
 const fs = require("fs");
-const { ConnectionCheckedInEvent } = require("mongodb");
+//const { ConnectionCheckedInEvent } = require("mongodb");
 const connection = require("./db/connection");
 
-const command = process.argv[2];
+const command = yargs.argv._[0];
+//console.log(yargs.argv);
 
 const app = async (args) => {
   try {
     if (command === "add") {
-      const movieObj = {
-        title: args.title,
-        actor: args.actor,
-      };
-      await connection(addMovie, movieObj);
+      await addMovie({ title: args.title, actor: args.actor });
     } else if (command === "list") {
-      await connection(listMovies);
+      await listMovies();
     } else if (command === "single") {
-      await connection(listSingleMovie, args.title);
+      await listSingleMovie(args.title);
     } else if (command === "update") {
-      // node src/app.js "update" --search="alient" --title="aliens"
-      await connection(updateMovie, args);
+      // node src/app.js "update" --search="alien" --title="aliens"
+      await updateMovie(args);
     } else if (command === "delete") {
-      await connection(deleteMovie, args.title);
+      await deleteMovie(args.title);
     }
   } catch (error) {
     console.log(error);
