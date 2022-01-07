@@ -27,6 +27,10 @@ const listMovies = async () => {
     }
   } catch (error) {
     displayInfo(error.message);
+  } finally {
+    // mongoose.connection.close(function () {
+    //   console.log("Mongoose default connection closed");
+    // });
   }
 };
 
